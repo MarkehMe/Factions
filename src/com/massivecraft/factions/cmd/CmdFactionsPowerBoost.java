@@ -1,16 +1,13 @@
 package com.massivecraft.factions.cmd;
 
+import org.bukkit.command.CommandSender;
+
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.Perm;
-import com.massivecraft.factions.cmd.type.TypeFaction;
-import com.massivecraft.factions.cmd.type.TypeMPlayer;
+import com.massivecraft.factions.PowerBoosted;
+import com.massivecraft.factions.RelationParticipator;
 import com.massivecraft.factions.entity.MPlayer;
-import com.massivecraft.factions.entity.Faction;
-import com.massivecraft.massivecore.MassiveException;
-import com.massivecraft.massivecore.command.Parameter;
 import com.massivecraft.massivecore.command.requirement.RequirementHasPerm;
-import com.massivecraft.massivecore.command.type.primitive.TypeDouble;
-import com.massivecraft.massivecore.command.type.primitive.TypeString;
 
 public class CmdFactionsPowerBoost extends FactionsCommand
 {
@@ -18,8 +15,8 @@ public class CmdFactionsPowerBoost extends FactionsCommand
 	// FIELDS
 	// -------------------------------------------- //
 	
-	private Parameter<MPlayer> parameterMplayer = new Parameter<MPlayer>(TypeMPlayer.get(), "name");
-	private Parameter<Faction> parameterFaction = new Parameter<Faction>(TypeFaction.get(), "name");
+	public CmdFactionsPowerBoostPlayer cmdFactionsPowerBoostPlayer = new CmdFactionsPowerBoostPlayer();
+	public CmdFactionsPowerBoostFaction cmdFactionsPowerBoostFaction = new CmdFactionsPowerBoostFaction();
 	
 	// -------------------------------------------- //
 	// CONSTRUCT
@@ -29,59 +26,38 @@ public class CmdFactionsPowerBoost extends FactionsCommand
 	{
 		// Aliases
 		this.addAliases("powerboost");
-
-		// Parameters
-		this.addParameter(TypeString.get(), "p|f|player|faction");
-		this.addParameter(parameterMplayer);
-		this.addParameter(TypeDouble.get(), "#");
+		
+		// Child
+		this.addChild(this.cmdFactionsPowerBoostPlayer);
+		this.addChild(this.cmdFactionsPowerBoostFaction);
 
 		// Requirements
 		this.addRequirements(RequirementHasPerm.get(Perm.POWERBOOST));
 	}
 
 	// -------------------------------------------- //
-	// OVERRIDE
+	// INFORM
 	// -------------------------------------------- //
 	
-	@Override
-	public void perform() throws MassiveException
+	public static boolean canSet(CommandSender sender, PowerBoosted boosted, double power)
 	{
-		String type = this.<String>readArg().toLowerCase();
-		boolean doPlayer = true;
-		if (type.equals("f") || type.equals("faction"))
-		{
-			doPlayer = false;
-		}
-		else if (!type.equals("p") && !type.equals("player"))
-		{
-			msg("<b>You must specify \"p\" or \"player\" to target a player or \"f\" or \"faction\" to target a faction.");
-			msg("<b>ex. /f powerboost p SomePlayer 0.5  -or-  /f powerboost f SomeFaction -5");
-			return;
-		}
+		// Check set permissions
+		if (!Perm.POWERBOOST_SET.has(sender, true)) return false;
 		
-		double targetPower = this.readArgAt(2);
-
-		String target;
-
-		if (doPlayer)
-		{
-			this.getParameters().set(1, parameterMplayer);
-			MPlayer targetPlayer = this.readArgAt(1);
-			
-			targetPlayer.setPowerBoost(targetPower);
-			target = "Player \""+targetPlayer.getName()+"\"";
-		}
-		else
-		{
-			this.getParameters().set(1, parameterFaction);
-			Faction targetFaction = this.readArgAt(1);
-			
-			targetFaction.setPowerBoost(targetPower);
-			target = "Faction \""+targetFaction.getName()+"\"";
-		}
-
-		msg("<i>"+target+" now has a power bonus/penalty of "+targetPower+" to min and max power levels.");
-		Factions.get().log(msender.getName()+" has set the power bonus/penalty for "+target+" to "+targetPower+".");
+		// Set
+		boosted.setPowerBoost(power);
+		return true;
+	}
+	
+	public static void informPowerBoost(String target, boolean update, RelationParticipator rp, double power, MPlayer sender)
+	{
+		// Prepare
+		target += " " + rp.describeTo(sender, true);
+		String description = power > 0D ? "bonus" : "penalty";
+		String when = update ? "now " : " ";
+		
+		sender.msg("<i>%s %shas a power %s of %.2f to min and max power levels.", target, when, description, power);
+		if (update) Factions.get().log(String.format("%s has set the power %s for %s to %.2f.", sender.getName(), description, target, power));
 	}
 	
 }

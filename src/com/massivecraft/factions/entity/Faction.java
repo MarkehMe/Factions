@@ -21,6 +21,7 @@ import com.massivecraft.factions.EconomyParticipator;
 import com.massivecraft.factions.FactionEqualsPredicate;
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.Lang;
+import com.massivecraft.factions.PowerBoosted;
 import com.massivecraft.factions.PredicateRole;
 import com.massivecraft.factions.Rel;
 import com.massivecraft.factions.RelationParticipator;
@@ -44,7 +45,7 @@ import com.massivecraft.massivecore.util.IdUtil;
 import com.massivecraft.massivecore.util.MUtil;
 import com.massivecraft.massivecore.util.Txt;
 
-public class Faction extends Entity<Faction> implements EconomyParticipator, Named
+public class Faction extends Entity<Faction> implements EconomyParticipator, Named, PowerBoosted
 {
 	// -------------------------------------------- //
 	// META
@@ -401,14 +402,15 @@ public class Faction extends Entity<Faction> implements EconomyParticipator, Nam
 	// -------------------------------------------- //
 	
 	// RAW
-	
-	public double getPowerBoost()
+	@Override
+	public Double getPowerBoost()
 	{
 		Double ret = this.powerBoost;
 		if (ret == null) ret = 0D;
 		return ret;
 	}
 	
+	@Override
 	public void setPowerBoost(Double powerBoost)
 	{
 		// Clean input
@@ -942,12 +944,7 @@ public class Faction extends Entity<Faction> implements EconomyParticipator, Nam
 			ret += mplayer.getPower();
 		}
 		
-		double factionPowerMax = MConf.get().factionPowerMax;
-		if (factionPowerMax > 0 && ret > factionPowerMax)
-		{
-			ret = factionPowerMax;
-		}
-		
+		ret = MUtil.limitNumber(ret, 0D, MConf.get().factionPowerMax);
 		ret += this.getPowerBoost();
 		
 		return ret;
@@ -963,12 +960,7 @@ public class Faction extends Entity<Faction> implements EconomyParticipator, Nam
 			ret += mplayer.getPowerMax();
 		}
 		
-		double factionPowerMax = MConf.get().factionPowerMax;
-		if (factionPowerMax > 0 && ret > factionPowerMax)
-		{
-			ret = factionPowerMax;
-		}
-		
+		ret = MUtil.limitNumber(ret, 0D, MConf.get().factionPowerMax);
 		ret += this.getPowerBoost();
 		
 		return ret;

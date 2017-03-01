@@ -14,6 +14,7 @@ import com.massivecraft.factions.EconomyParticipator;
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.Lang;
 import com.massivecraft.factions.Perm;
+import com.massivecraft.factions.PowerBoosted;
 import com.massivecraft.factions.Rel;
 import com.massivecraft.factions.RelationParticipator;
 import com.massivecraft.factions.event.EventFactionsChunkChangeType;
@@ -34,7 +35,7 @@ import com.massivecraft.massivecore.util.MUtil;
 import com.massivecraft.massivecore.util.Txt;
 import com.massivecraft.massivecore.xlib.gson.annotations.SerializedName;
 
-public class MPlayer extends SenderEntity<MPlayer> implements EconomyParticipator
+public class MPlayer extends SenderEntity<MPlayer> implements EconomyParticipator, PowerBoosted
 {
 	// -------------------------------------------- //
 	// META
@@ -393,13 +394,15 @@ public class MPlayer extends SenderEntity<MPlayer> implements EconomyParticipato
 	// FIELD: powerBoost
 	// -------------------------------------------- //
 
-	public double getPowerBoost()
+	@Override
+	public Double getPowerBoost()
 	{
 		Double ret = this.powerBoost;
 		if (ret == null) ret = 0D;
 		return ret;
 	}
 
+	@Override
 	public void setPowerBoost(Double powerBoost)
 	{
 		// Clean input
