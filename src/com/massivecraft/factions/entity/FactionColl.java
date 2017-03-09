@@ -17,6 +17,10 @@ public class FactionColl extends Coll<Faction>
 	
 	private static FactionColl i = new FactionColl();
 	public static FactionColl get() { return i; }
+	public FactionColl()
+	{
+		this.setEntityVersion(1);
+	}
 
 	// -------------------------------------------- //
 	// STACK TRACEABILITY
@@ -31,7 +35,13 @@ public class FactionColl extends Coll<Faction>
 	// -------------------------------------------- //
 	// OVERRIDE: COLL
 	// -------------------------------------------- //
-	
+
+	@Override
+	public int getEntityVersion()
+	{
+		return MConf.get().entityVersion;
+	}
+
 	@Override
 	public void setActive(boolean active)
 	{

@@ -7,11 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.massivecraft.massivecore.command.editor.annotation.EditorName;
-import com.massivecraft.massivecore.command.editor.annotation.EditorType;
-import com.massivecraft.massivecore.command.editor.annotation.EditorTypeInner;
-import com.massivecraft.massivecore.command.editor.annotation.EditorVisible;
-import com.massivecraft.massivecore.command.type.TypeMillisDiff;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
@@ -23,6 +18,11 @@ import com.massivecraft.factions.engine.EngineChat;
 import com.massivecraft.factions.event.EventFactionsChunkChangeType;
 import com.massivecraft.massivecore.collections.BackstringEnumSet;
 import com.massivecraft.massivecore.collections.WorldExceptionSet;
+import com.massivecraft.massivecore.command.editor.annotation.EditorName;
+import com.massivecraft.massivecore.command.editor.annotation.EditorType;
+import com.massivecraft.massivecore.command.editor.annotation.EditorTypeInner;
+import com.massivecraft.massivecore.command.editor.annotation.EditorVisible;
+import com.massivecraft.massivecore.command.type.TypeMillisDiff;
 import com.massivecraft.massivecore.store.Entity;
 import com.massivecraft.massivecore.util.MUtil;
 import com.massivecraft.massivecore.util.TimeUnit;
@@ -64,7 +64,9 @@ public class MConf extends Entity<MConf>
 	// -------------------------------------------- //
 	// WORLDS FEATURE ENABLED
 	// -------------------------------------------- //
-	
+
+	public int entityVersion = 0;
+
 	// Use this blacklist/whitelist system to toggle features on a per world basis.
 	// Do you only want claiming enabled on the one map called "Hurr"?
 	// In such case set standard to false and add "Hurr" as an exeption to worldsClaimingEnabled.
