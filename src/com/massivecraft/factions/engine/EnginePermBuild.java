@@ -8,6 +8,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.Action;
@@ -26,6 +27,7 @@ import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.TerritoryAccess;
@@ -81,6 +83,15 @@ public class EnginePermBuild extends Engine
 
 		return MPerm.getPermBuild().has(mplayer, ps, verboose);
 	}
+	
+	public static boolean canPlayerBuildAt(Object senderObject, PS ps, boolean verboose, Cancellable event)
+	{
+		boolean canBuildHere = canPlayerBuildAt(senderObject, ps, verboose);
+		if (!canBuildHere) event.setCancelled(true);
+		
+		return canBuildHere;
+	}
+
 
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void blockBuild(BlockPlaceEvent event)
@@ -89,10 +100,9 @@ public class EnginePermBuild extends Engine
 
 		boolean verboose = ! isFake(event);
 
-		if (canPlayerBuildAt(event.getPlayer(), PS.valueOf(event.getBlock()), verboose)) return;
+		if (canPlayerBuildAt(event.getPlayer(), PS.valueOf(event.getBlock()), verboose, event)) return;
 
 		event.setBuild(false);
-		event.setCancelled(true);
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -100,9 +110,7 @@ public class EnginePermBuild extends Engine
 	{
 		boolean verboose = ! isFake(event);
 
-		if (canPlayerBuildAt(event.getPlayer(), PS.valueOf(event.getBlock()), verboose)) return;
-
-		event.setCancelled(true);
+		canPlayerBuildAt(event.getPlayer(), PS.valueOf(event.getBlock()), verboose, event);
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -112,9 +120,7 @@ public class EnginePermBuild extends Engine
 
 		boolean verboose = ! isFake(event);
 
-		if (canPlayerBuildAt(event.getPlayer(), PS.valueOf(event.getBlock()), verboose)) return;
-
-		event.setCancelled(true);
+		canPlayerBuildAt(event.getPlayer(), PS.valueOf(event.getBlock()), verboose, event);
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -122,9 +128,7 @@ public class EnginePermBuild extends Engine
 	{
 		boolean verboose = ! isFake(event);
 
-		if (canPlayerBuildAt(event.getPlayer(), PS.valueOf(event.getBlock()), verboose)) return;
-
-		event.setCancelled(true);
+		canPlayerBuildAt(event.getPlayer(), PS.valueOf(event.getBlock()), verboose, event);
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -191,9 +195,7 @@ public class EnginePermBuild extends Engine
 	{
 		boolean verboose = ! isFake(event);
 
-		if (canPlayerBuildAt(event.getPlayer(), PS.valueOf(event.getEntity().getLocation()), verboose)) return;
-
-		event.setCancelled(true);
+		canPlayerBuildAt(event.getPlayer(), PS.valueOf(event.getEntity().getLocation()), verboose, event);
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -207,10 +209,7 @@ public class EnginePermBuild extends Engine
 
 		boolean verboose = ! isFake(event);
 
-		if ( ! canPlayerBuildAt(breaker, PS.valueOf(event.getEntity().getLocation()), verboose))
-		{
-			event.setCancelled(true);
-		}
+		canPlayerBuildAt(breaker, PS.valueOf(event.getEntity().getLocation()), verboose, event);
 	}
 
 	// Check for punching out fires where players should not be able to
@@ -232,14 +231,13 @@ public class EnginePermBuild extends Engine
 		// ... and we're only going to check for fire ... (checking everything else would be bad performance wise)
 		if (potentialBlock.getType() != Material.FIRE) return;
 
-		// ... check if they can build ...
-		if (canPlayerBuildAt(event.getPlayer(), PS.valueOf(potentialBlock), true)) return;
+		Player player = event.getPlayer();
+		
+		// ... check if they can build, cancel if required ...
+		if (canPlayerBuildAt(player, PS.valueOf(potentialBlock), true, event)) return;
 
-		// ... nope, cancel it
-		event.setCancelled(true);
-
-		// .. and compensate for client side prediction
-		event.getPlayer().sendBlockChange(potentialBlock.getLocation(), potentialBlock.getType(), potentialBlock.getState().getRawData());
+		// .. also compensate for client side prediction
+		player.sendBlockChange(potentialBlock.getLocation(), potentialBlock.getType(), potentialBlock.getState().getRawData());
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -299,11 +297,8 @@ public class EnginePermBuild extends Engine
 		if (edamagee == null) return;
 		if ( ! MConf.get().entityTypesEditOnDamage.contains(edamagee.getType())) return;
 
-		// ... and the player can't build there ...
-		if (canPlayerBuildAt(player, PS.valueOf(edamagee.getLocation()), true)) return;
-
-		// ... then cancel the event.
-		event.setCancelled(true);
+		// ... and if player can't build there, cancel the event
+		canPlayerBuildAt(player, PS.valueOf(edamagee.getLocation()), true, event);
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -317,19 +312,11 @@ public class EnginePermBuild extends Engine
 
 		if (block == null) return;  // clicked in air, apparently
 
-		if ( ! canPlayerUseBlock(player, block, true))
-		{
-			event.setCancelled(true);
-			return;
-		}
+		if (!canPlayerUseBlock(player, block, true, event)) return;
 
 		if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;  // only interested on right-clicks for below
 
-		if ( ! playerCanUseItemHere(player, PS.valueOf(block), event.getMaterial(), true))
-		{
-			event.setCancelled(true);
-			return;
-		}
+		playerCanUseItemHere(player, PS.valueOf(block), event.getMaterial(), true, event);
 	}
 
 	public static boolean playerCanUseItemHere(Player player, PS ps, Material material, boolean verboose)
@@ -345,6 +332,14 @@ public class EnginePermBuild extends Engine
 		if (mplayer.isOverriding()) return true;
 
 		return MPerm.getPermBuild().has(mplayer, ps, verboose);
+	}
+	
+	public static boolean playerCanUseItemHere(Player player, PS ps, Material material, boolean verboose, Cancellable event)
+	{
+		boolean canUseItemHere = playerCanUseItemHere(player, ps, material, verboose);
+		if (!canUseItemHere) event.setCancelled(true);
+		
+		return canUseItemHere;
 	}
 
 	public static boolean canPlayerUseBlock(Player player, Block block, boolean verboose)
@@ -367,6 +362,14 @@ public class EnginePermBuild extends Engine
 		if (material == Material.LEVER && ! MPerm.getPermLever().has(me, ps, verboose)) return false;
 		return true;
 	}
+	
+	public static boolean canPlayerUseBlock(Player player, Block block, boolean verboose, Cancellable event)
+	{
+		boolean canUseBlock = canPlayerUseBlock(player, block, verboose);
+		if (!canUseBlock) event.setCancelled(true);
+		
+		return canUseBlock;
+	}
 
 	// This event will not fire for Minecraft 1.8 armor stands.
 	// Armor stands are handled in EngineSpigot instead.
@@ -381,11 +384,8 @@ public class EnginePermBuild extends Engine
 		final Entity entity = event.getRightClicked();
 		final boolean verboose = true;
 
-		// If we can't use ...
-		if (canPlayerUseEntity(player, entity, verboose)) return;
-
-		// ... block use.
-		event.setCancelled(true);
+		// If we can't use block it
+		canPlayerUseEntity(player, entity, verboose, event);
 	}
 
 	public static boolean canPlayerUseEntity(Player player, Entity entity, boolean verboose)
@@ -415,6 +415,14 @@ public class EnginePermBuild extends Engine
 		// ... otherwise we may use the entity.
 		return true;
 	}
+	
+	public static boolean canPlayerUseEntity(Player player, Entity entity, boolean verboose, Cancellable event)
+	{
+		boolean canUseEntity = canPlayerUseEntity(player, entity, verboose);
+		if (!canUseEntity) event.setCancelled(true);
+		
+		return canUseEntity;
+	}
 
 	// For some reason onPlayerInteract() sometimes misses bucket events depending on distance (something like 2-3 blocks away isn't detected),
 	// but these separate bucket events below always fire without fail
@@ -424,9 +432,7 @@ public class EnginePermBuild extends Engine
 		Block block = event.getBlockClicked();
 		Player player = event.getPlayer();
 
-		if (playerCanUseItemHere(player, PS.valueOf(block), event.getBucket(), true)) return;
-
-		event.setCancelled(true);
+		playerCanUseItemHere(player, PS.valueOf(block), event.getBucket(), true, event);
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -435,9 +441,31 @@ public class EnginePermBuild extends Engine
 		Block block = event.getBlockClicked();
 		Player player = event.getPlayer();
 
-		if (playerCanUseItemHere(player, PS.valueOf(block), event.getBucket(), true)) return;
-
-		event.setCancelled(true);
+		playerCanUseItemHere(player, PS.valueOf(block), event.getBucket(), true, event);
+	}
+	
+	// Check if they can use the item they are teleporting with in the destination 
+	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+	public void onPlayerTeleportWithItem(PlayerTeleportEvent event)
+	{
+		Player player = event.getPlayer();
+		if (MUtil.isntPlayer(player)) return;
+		
+		Material teleportItem = null;
+		
+		switch (event.getCause())
+		{
+			case ENDER_PEARL:
+				teleportItem = Material.ENDER_PEARL;
+				break;
+			case CHORUS_FRUIT:
+				teleportItem = Material.CHORUS_FRUIT;
+				break;
+			default:
+				return;
+		}
+		
+		playerCanUseItemHere(player, PS.valueOf(event.getTo()), teleportItem, true, event);
 	}
 
 }
