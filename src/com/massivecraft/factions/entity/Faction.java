@@ -1216,6 +1216,15 @@ public class Faction extends Entity<Faction> implements EconomyParticipator, Nam
 	}
 	
 	// -------------------------------------------- //
+	// MUTED
+	// -------------------------------------------- //
+	
+	public boolean isMuted()
+	{
+		return this.getFlag(MFlag.getFlagMuted());
+	}
+	
+	// -------------------------------------------- //
 	// MESSAGES
 	// -------------------------------------------- //
 	// These methods are simply proxied in from the Mixin.
@@ -1224,16 +1233,19 @@ public class Faction extends Entity<Faction> implements EconomyParticipator, Nam
 	
 	public boolean sendMessage(Object message)
 	{
+		if (this.isMuted()) return false;
 		return MixinMessage.get().messagePredicate(new FactionEqualsPredicate(this), message);
 	}
 	
 	public boolean sendMessage(Object... messages)
 	{
+		if (this.isMuted()) return false;
 		return MixinMessage.get().messagePredicate(new FactionEqualsPredicate(this), messages);
 	}
 	
 	public boolean sendMessage(Collection<Object> messages)
 	{
+		if (this.isMuted()) return false;
 		return MixinMessage.get().messagePredicate(new FactionEqualsPredicate(this), messages);
 	}
 	
@@ -1241,16 +1253,19 @@ public class Faction extends Entity<Faction> implements EconomyParticipator, Nam
 	
 	public boolean msg(String msg)
 	{
+		if (this.isMuted()) return false;
 		return MixinMessage.get().msgPredicate(new FactionEqualsPredicate(this), msg);
 	}
 	
 	public boolean msg(String msg, Object... args)
 	{
+		if (this.isMuted()) return false;
 		return MixinMessage.get().msgPredicate(new FactionEqualsPredicate(this), msg, args);
 	}
 	
 	public boolean msg(Collection<String> msgs)
 	{
+		if (this.isMuted()) return false;
 		return MixinMessage.get().msgPredicate(new FactionEqualsPredicate(this), msgs);
 	}
 	
